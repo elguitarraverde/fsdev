@@ -3,7 +3,7 @@
   "description": "fsdev FacturaScripts Command Line Interface(CLI)",
   "type": "project",
   "license": "LGPL-3.0-or-later",
-  "version": "1.0",
+  "version": "1.0.0",
   "autoload": {
     "psr-4": {
       "Elguitarraverde\\Fsdev\\": "src/"
