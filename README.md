@@ -1,5 +1,5 @@
 <p align="center">
-    <img src="/art/preview.png" width="882" alt="FacturaScripts CLI Preview">
+    <img src="/art/preview.png" width="600" alt="FacturaScripts CLI Preview">
     <h1>fsdev, yet another FacturaScripts Command Line Interface(CLI)</h1>
 </p>
 
