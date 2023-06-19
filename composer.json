@@ -1,0 +1,32 @@
+{
+  "name": "elguitarraverde/fsdev",
+  "description": "fsdev FacturaScripts Command Line Interface(CLI)",
+  "type": "project",
+  "license": "LGPL-3.0-or-later",
+  "version": "1.0",
+  "autoload": {
+    "psr-4": {
+      "Elguitarraverde\\Fsdev\\": "src/"
+    }
+  },
+  "authors": [
+    {
+      "name": "Antonio",
+      "email": "elguitarraverde@hotmail.com"
+    }
+  ],
+  "config": {
+    "platform": {
+      "php": "7.2.5"
+    }
+  },
+  "require": {
+    "symfony/console": "^5.4"
+  },
+  "bin": [
+    "bin/fsdev"
+  ],
+  "require-dev": {
+    "symfony/var-dumper": "^5.4"
+  }
+}

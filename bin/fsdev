@@ -1,0 +1,17 @@
+#!/usr/bin/env php
+<?php
+
+use Elguitarraverde\Fsdev\Command\AboutCommand;
+use Elguitarraverde\Fsdev\Command\CacheClearCommand;
+use FacturaScripts\Core\Kernel;
+
+include $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
+
+define("FS_FOLDER", getcwd());
+
+$app = new Symfony\Component\Console\Application('FacturaScripts', Kernel::version());
+
+$app->add(new AboutCommand());
+$app->add(new CacheClearCommand());
+
+$app->run();
