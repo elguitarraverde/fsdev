@@ -2,7 +2,10 @@
 <?php
 
 use Elguitarraverde\Fsdev\Command\AboutCommand;
+use Elguitarraverde\Fsdev\Command\AppReconstructCommand;
 use Elguitarraverde\Fsdev\Command\CacheClearCommand;
+use Elguitarraverde\Fsdev\Command\ConfigFileCommand;
+use Elguitarraverde\Fsdev\Command\DataBaseWipeCommand;
 use FacturaScripts\Core\Kernel;
 
 include $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
@@ -13,5 +16,8 @@ $app = new Symfony\Component\Console\Application('FacturaScripts', Kernel::versi
 
 $app->add(new AboutCommand());
 $app->add(new CacheClearCommand());
+$app->add(new ConfigFileCommand());
+$app->add(new DataBaseWipeCommand());
+$app->add(new AppReconstructCommand());
 
 $app->run();
