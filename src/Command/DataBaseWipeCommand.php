@@ -25,6 +25,16 @@ class DataBaseWipeCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
+        if(null === $input->getOption('configuracion')){
+            $io->error('Debe especificar un archivo de configuración. ejemplo: vendor/bin/fsdev db:wipe -c config-mysql.php');
+            return Command::FAILURE;
+        }
+
+        if(false === is_file($input->getOption('configuracion'))){
+            $io->error('El archivo de configuración no existe.');
+            return Command::FAILURE;
+        }
+
         require_once $input->getOption('configuracion');
 
         $database = new DataBase();
@@ -32,11 +42,25 @@ class DataBaseWipeCommand extends Command
         $tables = $database->getTables();
 
         if (count($tables) > 0) {
+
+            $database->beginTransaction();
+            
+            if(FS_DB_TYPE === 'mysql'){
+                $database->exec('SET FOREIGN_KEY_CHECKS = 0;');
+            }
+
             $result = $database->exec('DROP TABLE ' . implode(', ', $tables));
+
+            if(FS_DB_TYPE === 'mysql'){
+                $database->exec('SET FOREIGN_KEY_CHECKS = 1;');
+            }
+            
+            $database->commit();
+
             if(true === $result){
                 $io->success('Todas las tablas se han borrado correctamente.');
             }else{
-                $io->success('Error al borrar las tablas.');
+                $io->error('Error al borrar las tablas.');
             }
         }else{
             $io->info('No existen tablas para borrar. Base de datos vacía.');
