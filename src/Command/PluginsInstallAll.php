@@ -52,6 +52,8 @@ class PluginsInstallAll extends Command
             'ServiciosFabricacion',
             'Ticketbai',
             'Traducciones',
+            'Unidades',
+            'PrePagos'
         ];
 
         foreach ($pluginInfoList as $pluginInfo) {
