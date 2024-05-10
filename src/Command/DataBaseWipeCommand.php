@@ -49,7 +49,7 @@ class DataBaseWipeCommand extends Command
                 $database->exec('SET FOREIGN_KEY_CHECKS = 0;');
             }
 
-            $result = $database->exec('DROP TABLE ' . implode(', ', $tables));
+            $result = $database->exec('DROP TABLE ' . implode(', ', $tables) . ';');
 
             if(FS_DB_TYPE === 'mysql'){
                 $database->exec('SET FOREIGN_KEY_CHECKS = 1;');
