@@ -9,21 +9,25 @@ use Elguitarraverde\Fsdev\Command\DataBaseWipeCommand;
 use Elguitarraverde\Fsdev\Command\PluginsDisableAll;
 use Elguitarraverde\Fsdev\Command\PluginsEnableAll;
 use Elguitarraverde\Fsdev\Command\PluginsInstallAll;
+use Elguitarraverde\Fsdev\Command\ScaffoldCommand;
 use FacturaScripts\Core\Kernel;
 
 include $_composer_autoload_path ?? __DIR__ . '/../vendor/autoload.php';
 
-define("FS_FOLDER", getcwd());
+define('FS_FOLDER', getcwd());
 
 $app = new Symfony\Component\Console\Application('FacturaScripts', Kernel::version());
 
-$app->add(new AboutCommand());
-$app->add(new CacheClearCommand());
-$app->add(new ConfigFileCommand());
-$app->add(new DataBaseWipeCommand());
-$app->add(new AppReconstructCommand());
-$app->add(new PluginsInstallAll());
-$app->add(new PluginsEnableAll());
-$app->add(new PluginsDisableAll());
+$app->addCommands([
+    new AboutCommand(),
+    new CacheClearCommand(),
+    new ConfigFileCommand(),
+    new DataBaseWipeCommand(),
+    new AppReconstructCommand(),
+    new PluginsInstallAll(),
+    new PluginsEnableAll(),
+    new PluginsDisableAll(),
+    new ScaffoldCommand(),
+]);
 
 $app->run();
