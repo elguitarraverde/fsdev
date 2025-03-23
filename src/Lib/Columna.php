@@ -19,6 +19,9 @@ final class Columna
     /** @var string */
     public $nombre = '';
 
+    /** @var ?string */
+    public $titulo = null;
+
     /** bool */
     public $primary = false;
 
@@ -30,6 +33,12 @@ final class Columna
 
     /** @var string */
     public $tipo = 'integer';
+
+    public ?int $numcolumns = null;
+
+    public bool $hideInListView = false;
+
+    public ?string $groupid = null;
 
     public function __construct(array $propiedades = [])
     {

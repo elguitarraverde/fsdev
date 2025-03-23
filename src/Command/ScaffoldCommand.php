@@ -35,40 +35,44 @@ class ScaffoldCommand extends Command
 
         $datos = Yaml::parseFile($pathYaml);
         foreach ($datos as $item) {
-            $nombreModelo = array_keys($item)[0];
+            $nombreModelo = $item['modelo'];
 
             $campos = $this->camposPredefinidosAntes();
-            foreach ($item[$nombreModelo]['campos'] as $campo) {
+            foreach ($item['campos'] as $campo) {
                 $campos[] = new Columna([
-                    'nombre' => array_keys($campo)[0],
-                    'tipo' => 'character varying',
+                    'nombre' => $campo['nombre'],
+                    'titulo' => $campo['titulo'],
+                    'tipo' => $campo['tipo'] ?? 'character varying',
                     'longitud' => 255,
+                    'numcolumns' => $campo['numcolumns'] ?? null,
+                    'hideInListView' => $campo['hideInListView'] ?? false,
+                    'groupid' => $campo['groupid'] ?? null,
                 ]);
             }
             array_push($campos, ...$this->camposPredefinidosDespues());
 
-            $this->createModelAction($nombreModelo, $item[$nombreModelo]['tabla'], $campos);
+            $this->createModelAction($nombreModelo, $item['tabla'], $campos, $item['grupos']);
         }
 
         return Command::SUCCESS;
     }
 
-    private function createModelAction($nombreModelo, $nombreTabla, $campos)
+    private function createModelAction($nombreModelo, $nombreTabla, $campos, $grupos)
     {
         // CREAMOS EL MODELO
-        $modelPath = 'Model/';
+        $modelPath = $this->pluginPath . DIRECTORY_SEPARATOR . 'Model/';
         $modelFileName = $modelPath . $nombreModelo . '.php';
         $this->createFolder($modelPath);
         $this->createModelByFields($modelFileName, $nombreTabla, $campos, $nombreModelo);
 
         // CREAMOS LA TABLA
-        $tablePath = 'Table/';
+        $tablePath = $this->pluginPath . DIRECTORY_SEPARATOR . 'Table/';
         $tableFilename = $tablePath . $nombreTabla . '.xml';
         $this->createFolder($tablePath);
         $this->createXMLTableByFields($tableFilename, $nombreTabla, $campos);
 
         // CREAMOS EL EDIT CONTROLLER
-        $this->createControllerEdit($nombreModelo, $campos);
+        $this->createControllerEdit($nombreModelo, $campos, $grupos);
 
         // CREAMOS EL LIST CONTROLLER
         $this->createControllerList($nombreModelo, $campos);
@@ -200,7 +204,7 @@ class ScaffoldCommand extends Command
             . "    {\n";
 
         if ($this->globalFields) {
-            $sample .= '        $this->creation_date = $this->creationdate ?? Tools::dateTime();' . "\n"
+            $sample .= '        $this->creation_date = $this->creation_date ?? Tools::dateTime();' . "\n"
                 . '        $this->nick = $this->nick ?? Session::user()->nick;' . "\n";
         }
 
@@ -219,7 +223,7 @@ class ScaffoldCommand extends Command
         }
 
         $sample .= '}' . "\n";
-        file_put_contents($this->pluginPath . DIRECTORY_SEPARATOR . $fileName, $sample);
+        file_put_contents($fileName, $sample);
     }
 
     private function getNamespace(): string
@@ -267,7 +271,7 @@ class ScaffoldCommand extends Command
             . $columns
             . $constraints
             . '</table>' . "\n";
-        file_put_contents($this->pluginPath . DIRECTORY_SEPARATOR . $tableFilename, $sample);
+        file_put_contents($tableFilename, $sample);
     }
 
     private function camposPredefinidosAntes()
@@ -312,7 +316,7 @@ class ScaffoldCommand extends Command
         return $fields;
     }
 
-    private function createControllerEdit(string $modelName, array $fields)
+    private function createControllerEdit(string $modelName, array $fields, array $grupos)
     {
         $filePath = $this->pluginPath . DIRECTORY_SEPARATOR . 'Controller/';
         $fileName = $filePath . 'Edit' . $modelName . '.php';
@@ -328,7 +332,7 @@ class ScaffoldCommand extends Command
         $xmlFilename = $xmlPath . 'Edit' . $modelName . '.xml';
         $this->createFolder($xmlPath);
 
-        $this->createXMLViewByFields($xmlFilename, $fields, 'edit');
+        $this->createXMLViewByFields($xmlFilename, $fields, 'edit', false, $grupos);
     }
 
     private function createControllerList(string $modelName, array $fields)
@@ -355,12 +359,26 @@ class ScaffoldCommand extends Command
         $this->createXMLViewByFields($xmlFilename, $fields, 'list');
     }
 
-    private function createXMLViewByFields(string $xmlFilename, array $fields, string $type, bool $extension = false)
+    /**
+     * @param string $xmlFilename
+     * @param Columna[] $fields
+     * @param string $type
+     * @param bool $extension
+     *
+     * @return void
+     */
+    private function createXMLViewByFields(string $xmlFilename, array $fields, string $type, bool $extension = false, array $grupos = [])
     {
-        // Creamos el xml con los campos introducidos
-        $groupName = 'data';
-        if ($extension) {
-            $groupName = 'data_extension';
+        // agrupamos las columnas por las que tienen grupo
+        // y las que no tienen grupo
+        $columnasConGrupo = [];
+        $columnasSinGrupo = [];
+        foreach ($fields as $columna) {
+            if($columna->groupid){
+                $columnasConGrupo[$columna->groupid][] = $columna;
+            }else{
+                $columnasSinGrupo[] = $columna;
+            }
         }
 
         $tabForColumns = 12;
@@ -373,6 +391,10 @@ class ScaffoldCommand extends Command
 
         $fieldDefault = [];
         foreach ($fields as $field) {
+            if($type === 'list' && $field->hideInListView){
+                $field->display = 'none';
+            }
+
             // guardamos las columnas por defecto aparte
             if ($this->globalFields && in_array($field->nombre, ['creation_date', 'last_nick', 'last_update', 'nick'])) {
                 $fieldDefault[] = $field;
@@ -415,9 +437,15 @@ class ScaffoldCommand extends Command
                 break;
 
             case 'edit': // Es un EditController
-                $sample .= '        <group name="' . $groupName . '" numcolumns="12">' . "\n"
-                    . $columns
+                $sample .= '        <group name="data" numcolumns="12">' . "\n"
+                    . $this->getXmlForColumns($columnasSinGrupo)
                     . '        </group>' . "\n";
+
+                foreach ($grupos as $grupoId => $grupo) {
+                    $sample .= '        <group name="' . $grupo['name'] . '" title="'.$grupo['title'].'" icon="'.$grupo['icon'].'" numcolumns="12">' . "\n"
+                        . $this->getXmlForColumns($columnasConGrupo[$grupoId])
+                        . '        </group>' . "\n";
+                }
 
                 // añadimos el grupo de logs
                 if ($this->globalFields) {
@@ -475,58 +503,77 @@ class ScaffoldCommand extends Command
         switch ($nombreWidget) {
             case 'last_nick':
             case 'nick':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" order="' . $order . '">' . "\n"
-                    . $spaces . '    <widget type="select" fieldname="' . $nombreWidget . '"' . $requerido . '>' . "\n"
-                    . $spaces . '        <values source="users" fieldcode="nick" fieldtile="nick"/>' . "\n"
-                    . $spaces . '    </widget>' . "\n"
-                    . $spaces . "</column>\n";
+//                $sample .= $spaces . '<column name="' . $nombreColumn . '" order="' . $order . '">' . "\n"
+//                    . $spaces . '    <widget type="select" fieldname="' . $nombreWidget . '"' . $requerido . '>' . "\n"
+//                    . $spaces . '        <values source="users" fieldcode="nick" fieldtile="nick"/>' . "\n"
+//                    . $spaces . '    </widget>' . "\n"
+//                    . $spaces . "</column>\n";
                 return $sample;
         }
 
+        $numcolumns = $column->numcolumns ?? 3;
+        $titulo = $column->titulo ?? '';
+
         switch ($column->tipo) {
             default:
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="text" fieldname="' . $nombreWidget . '"' . $maxlength . $requerido . '/>' . "\n";
                 break;
 
             case 'serial':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="text" fieldname="' . $nombreWidget . '" readonly="true"/>' . "\n";
                 break;
 
             case 'double precision':
             case 'integer':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="number" fieldname="' . $nombreWidget . '"' . $max . $min . $step . $requerido . '/>' . "\n";
                 break;
 
             case 'boolean':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="checkbox" fieldname="' . $nombreWidget . '"' . $requerido . '/>' . "\n";
                 break;
 
             case 'text':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="textarea" fieldname="' . $nombreWidget . '"' . $requerido . '/>' . "\n";
                 break;
 
             case 'timestamp':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="datetime" fieldname="' . $nombreWidget . '"' . $requerido . '/>' . "\n";
                 break;
 
             case 'date':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="date" fieldname="' . $nombreWidget . '"' . $requerido . '/>' . "\n";
                 break;
 
             case 'time':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="time" fieldname="' . $nombreWidget . '"' . $requerido . '/>' . "\n";
                 break;
         }
-
         $sample .= $spaces . "</column>\n";
         return $sample;
+    }
+
+    /**
+     * @param Columna[] $columnas
+     * @return string
+     */
+    private function getXmlForColumns(array $columnas): string
+    {
+        $order = 110;
+        $columns = '';
+
+        foreach ($columnas as $field) {
+            $columns .= $this->getWidget($field, $order, 12);
+            $order += 10;
+        }
+
+        return $columns;
     }
 }
