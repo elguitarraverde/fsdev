@@ -40,6 +40,10 @@ final class Columna
 
     public ?string $groupid = null;
 
+    public ?array $autocomplete = null;
+
+    public ?array $select = null;
+
     public function __construct(array $propiedades = [])
     {
         foreach ($propiedades as $property => $value) {

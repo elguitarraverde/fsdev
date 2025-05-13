@@ -50,18 +50,20 @@ class ScaffoldCommand extends Command
                         'numcolumns' => $campo['numcolumns'] ?? null,
                         'hideInListView' => $campo['hideInListView'] ?? false,
                         'groupid' => $campo['groupid'] ?? null,
+                        'select' => $campo['select'] ?? null,
+                        'autocomplete' => $campo['autocomplete'] ?? null,
                     ]);
                 }
                 array_push($campos, ...$this->camposPredefinidosDespues());
 
-                $this->createModelAction($nombreModelo, $item['tabla'], $campos, $item['grupos']);
+                $this->createModelAction($nombreModelo, $item['tabla'], $campos, $item['grupos'] ?? null);
             }
         }
 
         return Command::SUCCESS;
     }
 
-    private function createModelAction($nombreModelo, $nombreTabla, $campos, $grupos)
+    private function createModelAction($nombreModelo, $nombreTabla, $campos, $grupos = null)
     {
         // CREAMOS EL MODELO
         $modelPath = $this->pluginPath . DIRECTORY_SEPARATOR . 'Model/';
@@ -107,7 +109,7 @@ class ScaffoldCommand extends Command
             // Para el método clear()
             switch ($field->tipo) {
                 case 'serial':
-                    $typeProperty = 'int';
+                    $typeProperty = 'string';
                     $primaryColumn = $field->nombre;
                     break;
 
@@ -154,6 +156,8 @@ class ScaffoldCommand extends Command
                     break;
 
                 case 'text':
+                case 'select':
+                case 'autocomplete':
                     $typeProperty = 'string';
                     if (false === in_array($field->nombre, $testExclude)) {
                         $test .= '        $this->' . $field->nombre . ' = Tools::noHtml($this->' . $field->nombre . ');' . "\n";
@@ -320,7 +324,7 @@ class ScaffoldCommand extends Command
         return $fields;
     }
 
-    private function createControllerEdit(string $modelName, array $fields, array $grupos)
+    private function createControllerEdit(string $modelName, array $fields, ?array $grupos = null)
     {
         $filePath = $this->pluginPath . DIRECTORY_SEPARATOR . 'Controller/';
         $fileName = $filePath . 'Edit' . $modelName . '.php';
@@ -368,10 +372,11 @@ class ScaffoldCommand extends Command
      * @param Columna[] $fields
      * @param string $type
      * @param bool $extension
+     * @param array|null $grupos
      *
      * @return void
      */
-    private function createXMLViewByFields(string $xmlFilename, array $fields, string $type, bool $extension = false, array $grupos = [])
+    private function createXMLViewByFields(string $xmlFilename, array $fields, string $type, bool $extension = false, array $grupos = null)
     {
         // agrupamos las columnas por las que tienen grupo
         // y las que no tienen grupo
@@ -447,14 +452,17 @@ class ScaffoldCommand extends Command
                     . '        </group>' . "\n";
 
                 // COLUMNAS CON GRUPO
-                foreach ($grupos as $grupoId => $grupo) {
-                    if(isset($columnasConGrupo[$grupoId])){
-                        $numcolumns = $grupo['numcolumns'] ?? 12;
-                        $sample .= '        <group name="' . $grupo['name'] . '" valign="bottom" title="'.$grupo['title'].'" icon="'.$grupo['icon'].'" numcolumns="'.$numcolumns.'">' . "\n"
-                            . $this->getXmlForColumns($columnasConGrupo[$grupoId])
-                            . '        </group>' . "\n";
+                if ($grupos) {
+                    foreach ($grupos as $grupoId => $grupo) {
+                        if(isset($columnasConGrupo[$grupoId])){
+                            $numcolumns = $grupo['numcolumns'] ?? 12;
+                            $sample .= '        <group name="' . $grupo['name'] . '" valign="bottom" title="'.$grupo['title'].'" icon="'.$grupo['icon'].'" numcolumns="'.$numcolumns.'">' . "\n"
+                                . $this->getXmlForColumns($columnasConGrupo[$grupoId])
+                                . '        </group>' . "\n";
+                        }
                     }
                 }
+
 
                 // añadimos el grupo de logs
                 if ($this->globalFields) {
@@ -563,6 +571,18 @@ class ScaffoldCommand extends Command
             case 'time':
                 $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="time" fieldname="' . $nombreWidget . '"' . $requerido . '/>' . "\n";
+                break;
+            case 'select':
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                    . $spaces . '    <widget type="select" fieldname="' . $nombreWidget . '"' . $requerido . '>' . "\n"
+                    . $spaces . '        <values source="'.$column->select['source'].'" fieldcode="'.$column->select['fieldcode'].'" fieldtitle="'.$column->select['fieldtitle'].'"/>' . "\n"
+                    . $spaces . '    </widget>' . "\n";
+                break;
+            case 'autocomplete':
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                    . $spaces . '    <widget type="autocomplete" fieldname="' . $nombreWidget . '"' . $requerido . '>' . "\n"
+                    . $spaces . '        <values source="'.$column->autocomplete['source'].'" fieldcode="'.$column->autocomplete['fieldcode'].'" fieldtitle="'.$column->autocomplete['fieldtitle'].'"/>' . "\n"
+                    . $spaces . '    </widget>' . "\n";
                 break;
         }
         $sample .= $spaces . "</column>\n";
