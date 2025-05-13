@@ -1,7 +1,7 @@
 {
   "name": "elguitarraverde/fsdev",
   "description": "fsdev FacturaScripts Command Line Interface(CLI)",
-  "type": "project",
+  "type": "library",
   "license": "LGPL-3.0-or-later",
   "version": "1.3.0",
   "autoload": {
@@ -17,7 +17,7 @@
   ],
   "config": {
     "platform": {
-      "php": "7.4"
+      "php": "8.0"
     }
   },
   "require": {
