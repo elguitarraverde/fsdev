@@ -245,21 +245,26 @@ class ScaffoldCommand extends Command
         $columns = '';
         $constraints = '';
         foreach ($fields as $field) {
-            if ($field->tipo === 'character varying') {
-                $field->tipo .= '(' . $field->longitud . ')';
+            $fieldTipo = $field->tipo;
+            if($fieldTipo === 'select' || $fieldTipo === 'autocomplete'){
+                $fieldTipo = 'character varying';
+            }
+
+            if ($fieldTipo === 'character varying') {
+                $fieldTipo .= '(' . $field->longitud . ')';
             }
 
             $columns .= "    <column>\n"
                 . "        <name>$field->nombre</name>\n"
-                . "        <type>$field->tipo</type>\n";
+                . "        <type>$fieldTipo</type>\n";
 
-            if ($field->tipo === 'serial' || $field->primary || $field->requerido) {
+            if ($fieldTipo === 'serial' || $field->primary || $field->requerido) {
                 $columns .= "        <null>NO</null>\n";
             }
 
             $columns .= "    </column>\n";
 
-            if ($field->tipo === 'serial' || $field->primary) {
+            if ($fieldTipo === 'serial' || $field->primary) {
                 $constraints .= "    <constraint>\n"
                     . '        <name>' . $tableName . "_pkey</name>\n"
                     . '        <type>PRIMARY KEY (' . $field->nombre . ")</type>\n"
@@ -345,7 +350,7 @@ class ScaffoldCommand extends Command
 
     private function createControllerList(string $modelName, array $fields)
     {
-        $menu = $modelName;
+        $menu = str_replace('Plugins\\', '', $this->getNamespace());
         $title = $modelName;
 
         $filePath = $this->pluginPath . DIRECTORY_SEPARATOR . 'Controller/';
@@ -580,7 +585,7 @@ class ScaffoldCommand extends Command
                 break;
             case 'autocomplete':
                 $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
-                    . $spaces . '    <widget type="autocomplete" fieldname="' . $nombreWidget . '"' . $requerido . '>' . "\n"
+                    . $spaces . '    <widget type="autocomplete" fieldname="' . $nombreWidget . '"' . $requerido . ' onclick="'.($column->autocomplete['onclick'] ?? null).'">' . "\n"
                     . $spaces . '        <values source="'.$column->autocomplete['source'].'" fieldcode="'.$column->autocomplete['fieldcode'].'" fieldtitle="'.$column->autocomplete['fieldtitle'].'"/>' . "\n"
                     . $spaces . '    </widget>' . "\n";
                 break;
