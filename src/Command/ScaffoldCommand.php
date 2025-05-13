@@ -27,31 +27,35 @@ class ScaffoldCommand extends Command
         $io = new SymfonyStyle($input, $output);
 
         $this->pluginPath = rtrim(str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $input->getArgument('directorio-plugin')), DIRECTORY_SEPARATOR);
-        $pathYaml = implode(DIRECTORY_SEPARATOR, [FS_FOLDER, $this->pluginPath, 'scaffold.yaml']);
-        if(!file_exists($pathYaml)){
-            $io->error('No existe el archivo ' . $pathYaml);
-            return Command::FAILURE;
-        }
 
-        $datos = Yaml::parseFile($pathYaml);
-        foreach ($datos as $item) {
-            $nombreModelo = $item['modelo'];
-
-            $campos = $this->camposPredefinidosAntes();
-            foreach ($item['campos'] as $campo) {
-                $campos[] = new Columna([
-                    'nombre' => $campo['nombre'],
-                    'titulo' => $campo['titulo'],
-                    'tipo' => $campo['tipo'] ?? 'character varying',
-                    'longitud' => 255,
-                    'numcolumns' => $campo['numcolumns'] ?? null,
-                    'hideInListView' => $campo['hideInListView'] ?? false,
-                    'groupid' => $campo['groupid'] ?? null,
-                ]);
+        $pathYaml = implode(DIRECTORY_SEPARATOR, [FS_FOLDER, $this->pluginPath, 'scaffold']);
+        // obtener todos los archivos *.yaml del pluginPath
+        foreach (glob($pathYaml . DIRECTORY_SEPARATOR . '*.yaml') as $archivos) {
+            if(!file_exists($archivos)){
+                $io->error('No existe el archivo ' . $archivos);
+                return Command::FAILURE;
             }
-            array_push($campos, ...$this->camposPredefinidosDespues());
 
-            $this->createModelAction($nombreModelo, $item['tabla'], $campos, $item['grupos']);
+            $datos = Yaml::parseFile($archivos);
+            foreach ($datos as $item) {
+                $nombreModelo = $item['modelo'];
+
+                $campos = $this->camposPredefinidosAntes();
+                foreach ($item['campos'] as $campo) {
+                    $campos[] = new Columna([
+                        'nombre' => $campo['nombre'],
+                        'titulo' => $campo['titulo'],
+                        'tipo' => $campo['tipo'] ?? 'character varying',
+                        'longitud' => 255,
+                        'numcolumns' => $campo['numcolumns'] ?? null,
+                        'hideInListView' => $campo['hideInListView'] ?? false,
+                        'groupid' => $campo['groupid'] ?? null,
+                    ]);
+                }
+                array_push($campos, ...$this->camposPredefinidosDespues());
+
+                $this->createModelAction($nombreModelo, $item['tabla'], $campos, $item['grupos']);
+            }
         }
 
         return Command::SUCCESS;
@@ -169,8 +173,8 @@ class ScaffoldCommand extends Command
             }
 
             // Para la creación de properties
-            $properties .= "    /** @var " . $typeProperty . " */\n";
-            $properties .= "    public $" . $field->nombre . ";" . "\n\n";
+//            $properties .= "    /** @var " . $typeProperty . " */\n";
+            $properties .= "    public ?$typeProperty $" . $field->nombre . ";" . "\n\n";
         }
 
         $sample = '<?php' . "\n\n"
@@ -437,14 +441,19 @@ class ScaffoldCommand extends Command
                 break;
 
             case 'edit': // Es un EditController
-                $sample .= '        <group name="data" numcolumns="12">' . "\n"
+                // COLUMNAS SIN GRUPO
+                $sample .= '        <group name="data" valign="bottom" numcolumns="12">' . "\n"
                     . $this->getXmlForColumns($columnasSinGrupo)
                     . '        </group>' . "\n";
 
+                // COLUMNAS CON GRUPO
                 foreach ($grupos as $grupoId => $grupo) {
-                    $sample .= '        <group name="' . $grupo['name'] . '" title="'.$grupo['title'].'" icon="'.$grupo['icon'].'" numcolumns="12">' . "\n"
-                        . $this->getXmlForColumns($columnasConGrupo[$grupoId])
-                        . '        </group>' . "\n";
+                    if(isset($columnasConGrupo[$grupoId])){
+                        $numcolumns = $grupo['numcolumns'] ?? 12;
+                        $sample .= '        <group name="' . $grupo['name'] . '" valign="bottom" title="'.$grupo['title'].'" icon="'.$grupo['icon'].'" numcolumns="'.$numcolumns.'">' . "\n"
+                            . $this->getXmlForColumns($columnasConGrupo[$grupoId])
+                            . '        </group>' . "\n";
+                    }
                 }
 
                 // añadimos el grupo de logs
