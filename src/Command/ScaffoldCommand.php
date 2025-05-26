@@ -534,57 +534,58 @@ class ScaffoldCommand extends Command
         }
 
         $numcolumns = $column->numcolumns ?? 3;
-        $titulo = $column->titulo ?? '';
+        $titulo = empty($column->titulo) ? '' : 'title="' . $column->titulo . '"';
+        $display = empty($column->display) ? '' : 'display="' . $column->display . '"';
 
         switch ($column->tipo) {
             default:
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" ' . $titulo . ' numcolumns="' . $numcolumns . '" ' . $display . ' order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="text" fieldname="' . $nombreWidget . '"' . $maxlength . $requerido . '/>' . "\n";
                 break;
 
             case 'serial':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" ' . $titulo . ' numcolumns="' . $numcolumns . '" ' . $display . ' order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="text" fieldname="' . $nombreWidget . '" readonly="true"/>' . "\n";
                 break;
 
             case 'double precision':
             case 'integer':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" ' . $titulo . ' numcolumns="' . $numcolumns . '" ' . $display . ' order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="number" fieldname="' . $nombreWidget . '"' . $max . $min . $step . $requerido . '/>' . "\n";
                 break;
 
             case 'boolean':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" ' . $titulo . ' numcolumns="' . $numcolumns . '" ' . $display . ' order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="checkbox" fieldname="' . $nombreWidget . '"' . $requerido . '/>' . "\n";
                 break;
 
             case 'text':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" ' . $titulo . ' numcolumns="' . $numcolumns . '" ' . $display . ' order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="textarea" fieldname="' . $nombreWidget . '"' . $requerido . '/>' . "\n";
                 break;
 
             case 'timestamp':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" ' . $titulo . ' numcolumns="' . $numcolumns . '" ' . $display . ' order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="datetime" fieldname="' . $nombreWidget . '"' . $requerido . '/>' . "\n";
                 break;
 
             case 'date':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" ' . $titulo . ' numcolumns="' . $numcolumns . '" ' . $display . ' order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="date" fieldname="' . $nombreWidget . '"' . $requerido . '/>' . "\n";
                 break;
 
             case 'time':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" ' . $titulo . ' numcolumns="' . $numcolumns . '" ' . $display . ' order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="time" fieldname="' . $nombreWidget . '"' . $requerido . '/>' . "\n";
                 break;
             case 'select':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
-                    . $spaces . '    <widget type="select" fieldname="' . $nombreWidget . '"' . $requerido . '>' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" ' . $titulo . ' numcolumns="' . $numcolumns . '" ' . $display . ' order="' . $order . '">' . "\n"
+                    . $spaces . '    <widget type="select" fieldname="' . $nombreWidget . '"' . $requerido . ' onclick="'.($column->select['onclick'] ?? null).'">' . "\n"
                     . $spaces . '        <values source="'.$column->select['source'].'" fieldcode="'.$column->select['fieldcode'].'" fieldtitle="'.$column->select['fieldtitle'].'"/>' . "\n"
                     . $spaces . '    </widget>' . "\n";
                 break;
             case 'autocomplete':
-                $sample .= $spaces . '<column name="' . $nombreColumn . '" title="' . $titulo . '" numcolumns="' . $numcolumns . '" display="' . $column->display . '" order="' . $order . '">' . "\n"
+                $sample .= $spaces . '<column name="' . $nombreColumn . '" ' . $titulo . ' numcolumns="' . $numcolumns . '" ' . $display . ' order="' . $order . '">' . "\n"
                     . $spaces . '    <widget type="autocomplete" fieldname="' . $nombreWidget . '"' . $requerido . ' onclick="'.($column->autocomplete['onclick'] ?? null).'">' . "\n"
                     . $spaces . '        <values source="'.$column->autocomplete['source'].'" fieldcode="'.$column->autocomplete['fieldcode'].'" fieldtitle="'.$column->autocomplete['fieldtitle'].'"/>' . "\n"
                     . $spaces . '    </widget>' . "\n";
