@@ -551,7 +551,7 @@ class ScaffoldCommand extends Command
             case 'double precision':
             case 'integer':
                 $sample .= $spaces . '<column name="' . $nombreColumn . '" ' . $titulo . ' numcolumns="' . $numcolumns . '" ' . $display . ' order="' . $order . '">' . "\n"
-                    . $spaces . '    <widget type="number" fieldname="' . $nombreWidget . '"' . $max . $min . $step . $requerido . '/>' . "\n";
+                    . $spaces . '    <widget type="number" fieldname="' . $nombreWidget . '"' . $requerido . '/>' . "\n";
                 break;
 
             case 'boolean':
